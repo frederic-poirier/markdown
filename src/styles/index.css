@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Geist', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Geist', sans-serif;
+  line-height: 1.7;
+  color: #e0e0e0;
+  background: #111111;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'ss01', 'ss02', 'cv01';
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* Selection */
+::selection {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Code highlighting - Tokyo Night
+   Layout (padding, border-radius, background) is handled by CodeBlock <pre>.
+   .hljs only controls font, color, and line-height for the <code> inside. */
+.hljs {
+  background: transparent !important;
+  color: #a9b1d6;
+  padding: 0 !important;
+  border-radius: 0;
+  font-family: 'Geist Mono', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.75;
+  tab-size: 2;
+  display: block;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #565f89;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type {
+  color: #bb9af7;
+}
+
+.hljs-number {
+  color: #ff9e64;
+}
+
+.hljs-string,
+.hljs-meta .hljs-string {
+  color: #9ece6a;
+}
+
+.hljs-regexp,
+.hljs-template-tag {
+  color: #bb9af7;
+}
+
+.hljs-subst,
+.hljs-function,
+.hljs-title,
+.hljs-params,
+.hljs-formula {
+  color: #7aa2f7;
+}
+
+.hljs-attr,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag .hljs-attr {
+  color: #7dcfff;
+}
+
+.hljs-built_in,
+.hljs-builtin-name {
+  color: #e0af68;
+}
+
+.hljs-meta,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #bb9af7;
+}
+
+.hljs-attribute {
+  color: #73daca;
+}
+
+.hljs-tag,
+.hljs-operator,
+.hljs-punctuation {
+  color: #89ddff;
+}
+
+.hljs-deletion {
+  color: #f7768e;
+}
+
+.hljs-addition {
+  color: #9ece6a;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+/* Smooth transitions for interactive elements */
+a, button {
+  transition: all 0.15s ease;
+}
