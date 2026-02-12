@@ -71,7 +71,7 @@ function renderNode(node, index, parentTag) {
         }
         // Inline code
         return (
-          <code class="bg-[#1e1e1e] px-1.5 py-0.5 rounded text-[0.8125rem] font-mono text-[#c9d1d9] border border-[#282828]">
+          <code class="bg-neutral-900 px-1.5 py-0.5 rounded text-[0.8125rem] font-mono text-neutral-200 border border-neutral-800">
             {children}
           </code>
         );
@@ -100,17 +100,17 @@ function renderNode(node, index, parentTag) {
 
       case 'strong':
       case 'b':
-        return <strong class="font-semibold text-[#f0f0f0]">{children}</strong>;
+        return <strong class="font-semibold text-neutral-100">{children}</strong>;
 
       case 'em':
       case 'i':
-        return <em class="italic text-[#ccc]">{children}</em>;
+        return <em class="italic text-neutral-300">{children}</em>;
 
       case 'del':
-        return <del class="line-through text-[#777]">{children}</del>;
+        return <del class="line-through text-neutral-500">{children}</del>;
 
       case 'hr':
-        return <hr class="my-12 border-0 h-px bg-[#222]" />;
+        return <hr class="my-12 border-0 h-px bg-neutral-800" />;
 
       case 'br':
         return <br />;
@@ -123,7 +123,7 @@ function renderNode(node, index, parentTag) {
               type="checkbox"
               checked={props.checked}
               disabled
-              class="mr-2 accent-[#888] relative top-[1px]"
+              class="mr-2 accent-neutral-400 relative top-[1px]"
             />
           );
         }
@@ -157,8 +157,8 @@ function renderNode(node, index, parentTag) {
 
 export function MarkdownRenderer(props) {
   return (
-    <div class="markdown-content max-w-[60ch] mx-auto my-8">
-      <Show when={props.ast} fallback={<div class="text-[#666]">No content</div>}>
+    <div class="markdown-content my-8">
+      <Show when={props.ast} fallback={<div class="text-neutral-500">No content</div>}>
         <div>
           {renderNode(props.ast)}
         </div>

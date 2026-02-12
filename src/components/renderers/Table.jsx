@@ -2,7 +2,7 @@ import { Dynamic } from 'solid-js/web';
 
 export function Table(props) {
   return (
-    <div class="overflow-x-auto my-8 rounded-lg border border-[#1e1e1e]">
+    <div class="overflow-x-auto mt-2 mb-4 rounded-lg border border-neutral-800">
       <table class="min-w-full text-sm">
         {props.children}
       </table>
@@ -12,7 +12,7 @@ export function Table(props) {
 
 export function TableHead(props) {
   return (
-    <thead class="bg-[#161616] border-b border-[#1e1e1e]">
+    <thead class="bg-neutral-850 border-b border-neutral-800">
       {props.children}
     </thead>
   );
@@ -20,7 +20,7 @@ export function TableHead(props) {
 
 export function TableBody(props) {
   return (
-    <tbody class="bg-[#111]">
+    <tbody class="bg-neutral-900">
       {props.children}
     </tbody>
   );
@@ -28,7 +28,7 @@ export function TableBody(props) {
 
 export function TableRow(props) {
   return (
-    <tr class="border-b border-[#1a1a1a] last:border-0 hover:bg-[#161616] transition-colors">
+    <tr class="border-b border-neutral-800 last:border-0 hover:bg-neutral-850 transition-colors">
       {props.children}
     </tr>
   );
@@ -37,11 +37,11 @@ export function TableRow(props) {
 export function TableCell(props) {
   const isHeader = props.isHeader;
   const component = isHeader ? 'th' : 'td';
-  
+
   const classes = isHeader
-    ? 'px-4 py-2.5 text-left font-medium text-[#999] text-xs uppercase tracking-wider'
-    : 'px-4 py-2.5 text-[#bbb]';
-  
+    ? 'px-4 py-2.5 text-left font-medium text-neutral-400 text-xs uppercase tracking-wider'
+    : 'px-4 py-2.5 text-neutral-400';
+
   return (
     <Dynamic component={component} class={classes}>
       {props.children}

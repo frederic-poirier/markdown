@@ -3,11 +3,11 @@ import { Dynamic } from 'solid-js/web';
 export function List(props) {
   const isOrdered = props.ordered;
   const component = isOrdered ? 'ol' : 'ul';
-  
-  const classes = isOrdered 
-    ? 'list-decimal list-outside my-6 space-y-2.5 text-[#bbb] pl-6 marker:text-[#555]'
-    : 'list-disc list-outside my-6 space-y-2.5 text-[#bbb] pl-6 marker:text-[#3a3a3a]';
-  
+
+  const classes = isOrdered
+    ? 'list-decimal my-3 space-y-1.5 pl-6'
+    : 'list-disc my-3 space-y-1.5 pl-6';
+
   return (
     <Dynamic component={component} class={classes}>
       {props.children}

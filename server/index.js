@@ -1,5 +1,7 @@
 import { startServer } from './server.js';
 import { scanMarkdownFiles } from './file-watcher.js';
+import { mkdir, stat } from 'fs/promises';
+import { join } from 'path';
 
 function getTailscaleIP() {
   try {
@@ -14,16 +16,25 @@ function getTailscaleIP() {
 }
 
 const cwd = process.cwd();
+const filesDir = join(cwd, 'files');
 const host = getTailscaleIP();
 const port = process.env.PORT || 3000;
 
-console.log(`\nScanning for markdown files in: ${cwd}\n`);
+// Ensure files directory exists
+try {
+  await stat(filesDir);
+} catch {
+  await mkdir(filesDir, { recursive: true });
+  console.log(`Created files directory: ${filesDir}\n`);
+}
 
-const markdownFiles = await scanMarkdownFiles(cwd);
+console.log(`\nScanning for markdown files in: ${filesDir}\n`);
+
+const markdownFiles = await scanMarkdownFiles(filesDir);
 
 console.log(`Found ${markdownFiles.length} markdown file(s)\n`);
 
-await startServer({ cwd, host, port, markdownFiles });
+await startServer({ cwd: filesDir, host, port, markdownFiles });
 
 console.log(`Markdown viewer running at: http://${host}:${port}\n`);
 

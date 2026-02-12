@@ -3,45 +3,26 @@
 @theme {
   --font-sans: 'Geist', sans-serif;
   --font-mono: 'Geist Mono', monospace;
+  --color-neutral-850: oklch(23% 0 0);
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
 body {
   font-family: 'Geist', sans-serif;
   line-height: 1.7;
-  color: #e0e0e0;
-  background: #111111;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'ss01', 'ss02', 'cv01';
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
+@media (prefers-color-scheme: dark) {
+  * {
+    scrollbar-color: oklch(26.9% 0 0) transparent;
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #444;
-}
-
-/* Selection */
-::selection {
-  background: rgba(255, 255, 255, 0.12);
+.hide-scrollbar {
+  scrollbar-width: none;
 }
 
 /* Code highlighting - Tokyo Night
@@ -140,6 +121,30 @@ body {
 }
 
 /* Smooth transitions for interactive elements */
-a, button {
+a,
+button {
   transition: all 0.15s ease;
+}
+
+.layout-container {
+  scroll-timeline: --content-blur x;
+  scroll-timeline: --content-blur horizontal;
+}
+
+main {
+  animation: blurOut 1ms linear;
+  animation-timeline: --content-blur;
+}
+
+@keyframes blurOut {
+  from {
+    filter: blur(10px);
+    opacity: 0.1;
+    transform: scale(0.95);
+  }
+  to {
+    filter: blur(0);
+    opacity: 1;
+    transform: scale(1);
+  }
 }

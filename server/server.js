@@ -6,7 +6,6 @@ import { processMarkdownToHast, processMarkdownStringToHast } from './markdown-p
 const clients = new Set();
 
 export async function startServer({ cwd, host, port, markdownFiles }) {
-  // Mutable file list so uploads get added
   const files = [...markdownFiles];
   const fileWatchers = [];
 
