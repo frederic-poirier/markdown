@@ -1,0 +1,145 @@
+/* Tokyo Night Syntax Highlighting Theme */
+/* Using CSS variables for easy customization */
+
+:root {
+  /* Tokyo Night Light */
+  --hl-bg: transparent;
+  --hl-fg: #4e5173;
+  --hl-comment: #9699a3;
+  --hl-keyword: #2e7de9;
+  --hl-string: #587539;
+  --hl-number: #8c6c3e;
+  --hl-function: #2e7de9;
+  --hl-class: #8c6c3e;
+  --hl-tag: #2e7de9;
+  --hl-attr: #4e5173;
+  --hl-regexp: #007197;
+  --hl-symbol: #9854f1;
+  --hl-builtin: #007197;
+  --hl-meta: #9699a3;
+  --hl-deletion-bg: #f52a6520;
+  --hl-addition-bg: #58753920;
+  --hl-property: #8c6c3e;
+  --hl-params: #4e5173;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Tokyo Night Dark */
+    --hl-bg: transparent;
+    --hl-fg: #a9b1d6;
+    --hl-comment: #565f89;
+    --hl-keyword: #7aa2f7;
+    --hl-string: #9ece6a;
+    --hl-number: #ff9e64;
+    --hl-function: #7aa2f7;
+    --hl-class: #e0af68;
+    --hl-tag: #7aa2f7;
+    --hl-attr: #a9b1d6;
+    --hl-regexp: #7dcfff;
+    --hl-symbol: #bb9af7;
+    --hl-builtin: #7dcfff;
+    --hl-meta: #565f89;
+    --hl-deletion-bg: #f7768e20;
+    --hl-addition-bg: #9ece6a20;
+    --hl-property: #e0af68;
+    --hl-params: #a9b1d6;
+  }
+}
+
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0;
+  background: var(--hl-bg);
+  color: var(--hl-fg);
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: var(--hl-comment);
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  color: var(--hl-keyword);
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag .hljs-attr {
+  color: var(--hl-number);
+}
+
+.hljs-string,
+.hljs-doctag {
+  color: var(--hl-string);
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id {
+  color: var(--hl-function);
+}
+
+.hljs-subst {
+  font-weight: normal;
+}
+
+.hljs-type,
+.hljs-class .hljs-title {
+  color: var(--hl-class);
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-attribute {
+  color: var(--hl-tag);
+}
+
+.hljs-regexp,
+.hljs-link {
+  color: var(--hl-regexp);
+}
+
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--hl-symbol);
+}
+
+.hljs-built_in,
+.hljs-builtin-name {
+  color: var(--hl-builtin);
+}
+
+.hljs-meta {
+  color: var(--hl-meta);
+}
+
+.hljs-deletion {
+  background: var(--hl-deletion-bg);
+}
+
+.hljs-addition {
+  background: var(--hl-addition-bg);
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-function .hljs-title {
+  color: var(--hl-function);
+}
+
+.hljs-params {
+  color: var(--hl-params);
+}
+
+.hljs-property {
+  color: var(--hl-property);
+}

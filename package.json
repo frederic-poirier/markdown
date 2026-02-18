@@ -4,28 +4,38 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev:vite": "vite",
-    "dev:server": "bun run server/index.js",
-    "dev": "bun run dev:vite & bun run dev:server",
-    "build": "vite build",
-    "serve": "bun run server/index.js"
+    "dev": "concurrently \"vite\" \"wrangler pages dev --proxy 7000\"",
+    "build": "vite build"
   },
   "dependencies": {
+    "@panzoom/panzoom": "^4.6.1",
     "@solidjs/router": "^0.15.4",
+    "localforage": "^1.10.0",
+    "lucide-solid": "^0.574.0",
+    "mdast-util-from-markdown": "^2.0.2",
+    "mermaid": "^11.12.3",
+    "micromark-util-symbol": "^2.0.1",
+    "rehype-parse": "^9.0.1",
+    "rehype-raw": "^7.0.0",
+    "remark": "^15.0.1",
+    "remark-mark-plus": "^1.0.21",
+    "remark-rehype": "^11.1.2",
+    "shiki": "^3.22.0",
     "solid-js": "^1.9.11",
-    "to-vfile": "^8.0.0"
+    "solid-sonner": "^0.2.8",
+    "unist-util-visit": "^5.1.0",
+    "vite-plugin-pwa": "^1.2.0",
+    "wrangler": "^4.66.0"
   },
   "devDependencies": {
-    "vite": "^6.0.3",
-    "vite-plugin-solid": "^2.10.2",
-    "tailwindcss": "^4.0.0",
-    "@tailwindcss/vite": "^4.0.0",
-    "unified": "^11.0.5",
+    "@tailwindcss/vite": "^4.1.18",
+    "@toolwind/anchors": "^1.0.10",
+    "concurrently": "^9.2.1",
+    "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
-    "remark-gfm": "^4.0.0",
-    "remark-rehype": "^11.1.1",
-    "rehype-highlight": "^7.0.1",
-    "rehype-slug": "^6.0.0",
-    "rehype-autolink-headings": "^7.1.0"
+    "tailwindcss": "^4.1.18",
+    "unified": "^11.0.5",
+    "vite": "^7.3.1",
+    "vite-plugin-solid": "^2.11.10"
   }
 }

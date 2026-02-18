@@ -1,168 +1,167 @@
-import { For, Show } from 'solid-js';
-import { Dynamic } from 'solid-js/web';
-import { Heading } from './renderers/Heading';
-import { CodeBlock } from './renderers/CodeBlock';
-import { Paragraph } from './renderers/Paragraph';
-import { Link } from './renderers/Link';
-import { Blockquote } from './renderers/Blockquote';
-import { List, ListItem } from './renderers/List';
-import { Table, TableHead, TableBody, TableRow, TableCell } from './renderers/Table';
-import { Image } from './renderers/Image';
+import { For, children as resolveChildren } from "solid-js";
+import { Heading } from "./renderers/Heading.jsx";
+import { CodeBlock } from "./renderers/CodeBlock.jsx";
+import { Paragraph } from "./renderers/Paragraph.jsx";
+import { Link } from "./renderers/Link.jsx";
+import { Blockquote } from "./renderers/Blockquote.jsx";
+import { Checkbox, List, ListItem } from "./renderers/List.jsx";
+import { Table, TableHead, TableBody, TableRow, TableCell } from "./renderers/Table.jsx";
+import { Image } from "./renderers/Image.jsx";
+import { Strong, Code, Del, Em, Hr } from "./renderers/Text.jsx";
+import { Details, Summary } from "./renderers/Details.jsx";
 
-function getClassName(props) {
-  if (!props.className) return undefined;
-  if (Array.isArray(props.className)) return props.className.join(' ');
-  return String(props.className);
-}
+// Les noeuds hast "element" avec enfants
+const ELEMENT_RENDERERS = {
+  h1: ({ children }) => <Heading level={1}>{children}</Heading>,
+  h2: ({ children }) => <Heading level={2}>{children}</Heading>,
+  h3: ({ children }) => <Heading level={3}>{children}</Heading>,
+  h4: ({ children }) => <Heading level={4}>{children}</Heading>,
+  h5: ({ children }) => <Heading level={5}>{children}</Heading>,
+  h6: ({ children }) => <Heading level={6}>{children}</Heading>,
+  p: ({ children }) => <Paragraph>{children}</Paragraph>,
+  blockquote: ({ children }) => <Blockquote>{children}</Blockquote>,
+  ul: ({ children }) => <List ordered={false}>{children}</List>,
+  ol: ({ children }) => <List ordered={true}>{children}</List>,
+  li: ({ children }) => <ListItem>{children}</ListItem>,
+  strong: ({ children }) => <Strong>{children}</Strong>,
+  em: ({ children }) => <Em>{children}</Em>,
+  del: ({ children }) => <Del>{children}</Del>,
+  a: ({ node, children }) => (
+    <Link node={node} href={node.properties?.href} title={node.properties?.title}>
+      {children}
+    </Link>
+  ),
+  table: (props) => {
+    const resolved = resolveChildren(() => props.children);
+    const rows = resolved().filter(Boolean);
+    return (
+      <Table>
+        <TableHead>{rows[0]}</TableHead>
+        <TableBody><For each={rows.slice(1)}>{(row) => row}</For></TableBody>
+      </Table>
+    );
+  },
+  thead: ({ children }) => <>{children}</>,
+  tbody: ({ children }) => <>{children}</>,
+  tr: ({ node, children }) => <TableRow vAlign={node.properties?.vAlign}>{children}</TableRow>,
+  th: ({ node, children }) => (
+    <TableCell
+      isHeader={true}
+      align={node.properties?.align}
+      colSpan={node.properties?.colSpan}
+      rowSpan={node.properties?.rowSpan}
+      width={node.properties?.width}
+      vAlign={node.properties?.vAlign}
+    >
+      {children}
+    </TableCell>
+  ),
+  td: ({ node, children }) => (
+    <TableCell
+      isHeader={false}
+      align={node.properties?.align}
+      colSpan={node.properties?.colSpan}
+      rowSpan={node.properties?.rowSpan}
+      width={node.properties?.width}
+      vAlign={node.properties?.vAlign}
+    >
+      {children}
+    </TableCell>
+  ),
+  details: ({ children }) => <Details>{children}</Details>,
+  summary: ({ children }) => <Summary>{children}</Summary>,
+  pre: ({ children }) => <>{children}</>, // CodeBlock est géré par le noeud code enfant
+  hr: () => <Hr />,
+  br: () => <br />,
+  // Éléments passthrough — rend les enfants directement
+  div: ({ children }) => <div>{children}</div>,
+  span: ({ children }) => <span>{children}</span>,
+};
 
-function renderNode(node, index, parentTag) {
+// Les noeuds "element" feuilles (sans enfants significatifs)
+const LEAF_ELEMENT_RENDERERS = {
+  img: ({ node, parent }) => (
+    <Image
+      src={node.properties?.src}
+      href={parent?.tagName === 'a' ? parent.properties?.href : undefined}
+      alt={node.properties?.alt}
+      title={node.properties?.title}
+      align={node.properties?.align}
+      width={node.properties?.width}
+      height={node.properties?.height}
+      vAlign={node.properties?.vAlign}
+    />
+  ),
+  input: ({ node }) => {
+    if (node.properties?.type === 'checkbox') {
+      return <Checkbox checked={node.properties?.checked} disabled={node.properties?.disabled} />;
+    }
+
+    return (
+      <input
+        type={node.properties?.type}
+        checked={node.properties?.checked}
+        disabled={node.properties?.disabled}
+      />
+    );
+  },
+  code: ({ node, parent }) => {
+    // <code> dans un <pre> = bloc de code
+    if (parent?.tagName === 'pre') {
+      const lang = node.properties?.className?.[0]?.replace('language-', '') ?? null
+      const value = node.children?.[0]?.value ?? ''
+      return <CodeBlock language={lang} value={value} />
+    }
+    // <code> inline
+    const value = node.children?.[0]?.value ?? ''
+    return <Code>{value}</Code>
+  },
+};
+
+function HastNode({ node, parent }) {
   if (!node) return null;
 
-  // Text node
-  if (node.type === 'text') {
-    return node.value;
+  // Noeud texte
+  if (node.type === 'text') return <>{node.value}</>;
+
+  // Commentaires HTML — ignorés
+  if (node.type === 'comment') return null;
+
+  // Racine du document
+  if (node.type === 'root') {
+    return (
+      <For each={node.children}>
+        {(child) => <HastNode node={child} parent={node} />}
+      </For>
+    );
   }
 
-  // Element node
   if (node.type === 'element') {
-    const props = node.properties || {};
-    const children = node.children?.map((child, i) => renderNode(child, i, node.tagName));
+    const tag = node.tagName;
 
-    switch (node.tagName) {
-      case 'h1':
-      case 'h2':
-      case 'h3':
-      case 'h4':
-      case 'h5':
-      case 'h6':
-        return <Heading level={node.tagName} id={props.id}>{children}</Heading>;
+    // Cas spéciaux feuilles
+    const LeafRenderer = LEAF_ELEMENT_RENDERERS[tag];
+    if (LeafRenderer) return <LeafRenderer node={node} parent={parent} />;
 
-      case 'p':
-        return <Paragraph>{children}</Paragraph>;
+    // Éléments avec enfants
+    const Renderer = ELEMENT_RENDERERS[tag];
+    const children = (
+      <For each={node.children}>
+        {(child) => <HastNode node={child} parent={node} />}
+      </For>
+    );
 
-      case 'a': {
-        // If inside a heading, don't render as a styled link - just pass through children
-        if (parentTag && /^h[1-6]$/.test(parentTag)) {
-          return <>{children}</>;
-        }
-        return <Link href={props.href}>{children}</Link>;
-      }
+    if (Renderer) return <Renderer node={node}>{children}</Renderer>;
 
-      case 'blockquote':
-        return <Blockquote>{children}</Blockquote>;
-
-      case 'ul':
-        return <List ordered={false}>{children}</List>;
-
-      case 'ol':
-        return <List ordered={true}>{children}</List>;
-
-      case 'li':
-        return <ListItem>{children}</ListItem>;
-
-      case 'pre':
-        return <CodeBlock>{children}</CodeBlock>;
-
-      case 'code': {
-        const cls = getClassName(props);
-        if (parentTag === 'pre') {
-          // Code inside pre: this is a fenced code block, render with highlighting classes
-          return <code class={cls}>{children}</code>;
-        }
-        // Inline code
-        return (
-          <code class="bg-neutral-900 px-1.5 py-0.5 rounded text-[0.8125rem] font-mono text-neutral-200 border border-neutral-800">
-            {children}
-          </code>
-        );
-      }
-
-      case 'table':
-        return <Table>{children}</Table>;
-
-      case 'thead':
-        return <TableHead>{children}</TableHead>;
-
-      case 'tbody':
-        return <TableBody>{children}</TableBody>;
-
-      case 'tr':
-        return <TableRow>{children}</TableRow>;
-
-      case 'th':
-        return <TableCell isHeader={true}>{children}</TableCell>;
-
-      case 'td':
-        return <TableCell isHeader={false}>{children}</TableCell>;
-
-      case 'img':
-        return <Image src={props.src} alt={props.alt} />;
-
-      case 'strong':
-      case 'b':
-        return <strong class="font-semibold text-neutral-100">{children}</strong>;
-
-      case 'em':
-      case 'i':
-        return <em class="italic text-neutral-300">{children}</em>;
-
-      case 'del':
-        return <del class="line-through text-neutral-500">{children}</del>;
-
-      case 'hr':
-        return <hr class="my-12 border-0 h-px bg-neutral-800" />;
-
-      case 'br':
-        return <br />;
-
-      case 'input': {
-        // Task list checkboxes
-        if (props.type === 'checkbox') {
-          return (
-            <input
-              type="checkbox"
-              checked={props.checked}
-              disabled
-              class="mr-2 accent-neutral-400 relative top-[1px]"
-            />
-          );
-        }
-        return <input {...props} />;
-      }
-
-      case 'div': {
-        const cls = getClassName(props);
-        return <div class={cls}>{children}</div>;
-      }
-
-      case 'span': {
-        const cls = getClassName(props);
-        return <span class={cls}>{children}</span>;
-      }
-
-      default: {
-        const cls = getClassName(props);
-        return <Dynamic component={node.tagName} class={cls}>{children}</Dynamic>;
-      }
-    }
+    // Fallback : élément inconnu, on rend quand même les enfants
+    console.warn(`[HAST] Élément inconnu : <${tag}>`, node);
+    return <>{children}</>;
   }
 
-  // Root node
-  if (node.type === 'root' && node.children) {
-    return <>{node.children.map((child, i) => renderNode(child, i, 'root'))}</>;
-  }
-
+  console.warn(`[HAST] Noeud inconnu : "${node.type}"`, node);
   return null;
 }
 
-export function MarkdownRenderer(props) {
-  return (
-    <div class="markdown-content my-8">
-      <Show when={props.ast} fallback={<div class="text-neutral-500">No content</div>}>
-        <div>
-          {renderNode(props.ast)}
-        </div>
-      </Show>
-    </div>
-  );
+export function MarkdownRenderer({ ast }) {
+  return <HastNode node={ast} />;
 }
