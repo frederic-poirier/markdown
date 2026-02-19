@@ -1,6 +1,19 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "md",
-  "compatibility_date": "2025-02-12",
-  "pages_build_output_dir": "dist"
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "texte",
+	"compatibility_date": "2025-02-12",
+	"pages_build_output_dir": "dist",
+	"r2_buckets": [
+		{
+			"binding": "FILES_BUCKET",
+			"bucket_name": "texte-files"
+		}
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "texte-d1",
+			"database_id": "7453e4c8-01b3-4ba3-9536-2c44786cc6eb",
+		}
+	]
 }

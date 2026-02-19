@@ -56,6 +56,7 @@ export function useModal() {
         opacity-100 scale-100
         starting:opacity-0 starting:scale-95
         transition-opacity transition-transform transition-discrete duration-300 ease-out
+        origin-top-right
         rounded-xl"
       >
         {props.children}

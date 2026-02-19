@@ -28,7 +28,10 @@ export function Checkbox(props) {
     <span
       aria-hidden="true"
       data-checked={props.checked ? 'true' : 'false'}
-      class="checkbox absolute left-[-1.5em] top-[0.25lh] w-4 h-4 rounded bg-neutral-200 text-neutral-600 flex items-center justify-center"
+      classList={{
+        'absolute left-[1.5em] top-[0.25lh]': props.position === undefined
+      }}
+      class="checkbox w-4 h-4 rounded bg-neutral-200 text-neutral-600 flex items-center justify-center"
     >
       <Show when={props.checked}>
         <Check size={14} stroke-width={3} />

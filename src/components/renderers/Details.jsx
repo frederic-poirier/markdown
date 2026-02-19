@@ -6,7 +6,7 @@ export function Details(props) {
 
     return (
         <details
-            class="my-4 overflow-hidden group bg-neutral-100 p-2 rounded-xl"
+            class="my-4 overflow-hidden group bg-neutral-100 border border-neutral-200 p-2 rounded-xl"
             open={isOpen()}
             onToggle={(e) => setIsOpen(e.target.open)}
         >
@@ -17,9 +17,9 @@ export function Details(props) {
 
 export function Summary(props) {
     return (
-        <summary class="flex text-neutral-600 items-center gap-2 cursor-pointer select-none font-medium ">
+        <summary class="flex text-sm text-neutral-600 items-center gap-2 cursor-pointer select-none font-medium ">
             <ChevronRight
-                size={16}
+                size={14}
                 class="transition-transform group-open:rotate-90 text-neutral-600 shrink-0"
             />
             <span>{props.children}</span>

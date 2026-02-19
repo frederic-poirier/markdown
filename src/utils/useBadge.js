@@ -13,14 +13,15 @@ async function getBadgeSVG(url) {
 }
 
 async function fetchBadgeSVG(url) {
+    const proxy = `/api/badge?url=${encodeURIComponent(url)}`
+
     try {
-        const response = await fetch(url)
-        if (!response.ok) throw new Error("Direct fetch failed")
-        return await response.text()
-    } catch {
-        const proxy = `/api/badge?url=${encodeURIComponent(url)}`
         const response = await fetch(proxy)
         if (!response.ok) throw new Error("Proxy fetch failed")
+        return await response.text()
+    } catch {
+        const response = await fetch(url)
+        if (!response.ok) throw new Error("Direct fetch failed")
         return await response.text()
     }
 }
@@ -62,7 +63,7 @@ function parseSvg(svgText) {
         }
     }
 
-    return { doc, logo, label: null, value: null }
+    return { doc, logo: extractLogo(doc), label: null, value: null }
 }
 
 
@@ -85,7 +86,6 @@ function splitLabelValue(str, doc) {
 
 function extractLogo(doc) {
     const image = doc.querySelector("image")
-    console.log(image)
     if (!image) return null
 
     const href =

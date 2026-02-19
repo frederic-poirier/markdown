@@ -1,4 +1,5 @@
-import { A, useNavigate } from "@solidjs/router"
+import { A, useLocation, useNavigate } from "@solidjs/router"
+import { Show } from 'solid-js';
 import { useAuth } from "../context/AuthContext.jsx"
 import User from "lucide-solid/icons/user"
 import LogOut from "lucide-solid/icons/log-out"
@@ -6,6 +7,10 @@ import LogOut from "lucide-solid/icons/log-out"
 export default function Layout(props) {
   const { user, logout, loading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation();
+
+  const isFullWidthRoute = () =>
+    location.pathname.startsWith('/media/');
 
   function loginButton() {
     return (
@@ -20,7 +25,7 @@ export default function Layout(props) {
 
   return (
     <>
-      <nav class="flex justify-between items-center p-4 max-w-[60ch] mx-auto">
+      <nav class="flex justify-between items-center p-4" classList={{ 'max-w-[60ch] mx-auto': !isFullWidthRoute(), 'w-full': isFullWidthRoute() }}>
         <A href="/" class="font-mono">md</A>
         <Show when={!loading()} fallback={<div class="w-6 h-6 rounded-md animate-pulse bg-neutral-200 dark:bg-neutral-800" />}>
           <Show when={user()} fallback={loginButton}>
@@ -30,7 +35,7 @@ export default function Layout(props) {
           </Show>
         </Show>
       </nav>
-      <main class="px-4 max-w-[60ch] mx-auto mt-8 mb-16">
+      <main class="px-4 mt-8 mb-16" classList={{ 'max-w-[60ch] mx-auto': !isFullWidthRoute(), 'w-full': isFullWidthRoute() }}>
         {props.children}
       </main>
     </>

@@ -2,6 +2,14 @@
 
 A fast, customizable CLI tool to visualize Markdown files in your browser with live hot reload.
 
+## Release Notes (2026-02-18)
+
+- Added mode-based routes: `/text/:id`, `/code/:id`, `/media/:id` with `/view/:id` redirect compatibility.
+- Expanded ingestion to support text/code files (web input + `texte-upload` CLI), not only `.md`.
+- Introduced file mode resolution (`text`/`code`/`media`) with metadata propagation through local/cloud flows.
+- Fixed Mermaid error behavior to prevent leaked error SVG artifacts outside layout.
+- Updated `CodeView` to render `CodeBlock` without boxy container styles (no padding, background, or border).
+
 ## Features
 
 - **Live Hot Reload**: Automatically refreshes when markdown files change
@@ -28,6 +36,44 @@ bun install
 ```
 
 ## Usage
+
+### Global CLI upload to texte.zip
+
+You can install the project CLI globally and upload `.md` files through the API (`/api/files/:id`), which stores data in R2 + D1 index.
+
+```bash
+# from this repository root
+npm link
+
+# auto-read session from Firefox/Chromium, prompt OAuth if invalid
+texte-upload ./README.md
+
+# upload one file to production
+TEXTE_SESSION="<session_token>" texte-upload ./README.md
+
+# upload a directory to localhost (dev)
+texte-upload ./docs --url http://localhost:7000 --cookie "session=<session_token>"
+```
+
+The command recursively scans directories and uploads all `.md` files found.
+
+It stores the last valid session cookie in `~/.config/texte-upload/session.json`.
+If no valid cookie is found, it opens `${baseUrl}/auth/login` and retries reading from browser cookies.
+
+To fetch a session token, login first in browser:
+
+```bash
+xdg-open "http://localhost:7000/auth/login"
+```
+
+Then copy cookie `session` from browser devtools and pass it via `TEXTE_SESSION`, `TEXTE_COOKIE`, or `--cookie`.
+
+You can force browser source:
+
+```bash
+texte-upload ./docs --browser firefox
+texte-upload ./docs --browser chromium
+```
 
 ### Development Mode
 
