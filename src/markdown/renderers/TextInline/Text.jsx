@@ -17,7 +17,3 @@ export function Code(props) {
 export function Hr() {
   return <hr class="my-6 border-0 h-px bg-neutral-100" />
 }
-
-export function Highlight() {
-  return
-}

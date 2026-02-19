@@ -1,5 +1,5 @@
 import { Dynamic } from 'solid-js/web';
-import { applyElementProps } from '../../utils/elementProps.js';
+import { applyElementProps } from '../../../utils/elementProps.js';
 
 export function Table(props) {
   return (

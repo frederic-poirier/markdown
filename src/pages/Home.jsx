@@ -7,7 +7,6 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useFiles } from '../context/FilesContext.jsx';
 import { useModal } from '../components/ui/Modal.jsx';
 import { getSizePlaceholder, getTimeBetween, useNow } from '../utils/useMesure.js';
-import { Checkbox } from "../components/renderers/List.jsx"
 import { ToggleButton } from '../components/ui/ToggleButton.jsx';
 import CloudUpload from 'lucide-solid/icons/cloud-upload';
 import { Selectable } from '../components/ui/Selectable.jsx';

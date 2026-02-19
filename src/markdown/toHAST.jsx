@@ -1,9 +1,9 @@
-import { unified } from 'unified';
-import remarkParse from 'remark-parse';
-import remarkRehype from 'remark-rehype';
-import rehypeParse from 'rehype-parse';
-import rehypeRaw from 'rehype-raw';
-import remarkGfm from 'remark-gfm';
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import rehypeParse from "rehype-parse";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 
 const DEFAULT_CACHE_MAX_BYTES = 3 * 1024 * 1024;
 const parseCache = new Map();
@@ -15,15 +15,14 @@ const markdownProcessor = unified()
   .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeRaw);
 
-const htmlProcessor = unified()
-  .use(rehypeParse, { fragment: true });
+const htmlProcessor = unified().use(rehypeParse, { fragment: true });
 
 function cacheKey(text, type) {
-  return `${type || 'unknown'}:${text}`;
+  return `${type || "unknown"}:${text}`;
 }
 
 function estimateNodeSize(text) {
-  return new TextEncoder().encode(text || '').length;
+  return new TextEncoder().encode(text || "").length;
 }
 
 function readFromCache(key) {
@@ -55,8 +54,7 @@ function writeToCache(key, value, size) {
   }
 }
 
-
-export default async function toHAST(text, type) {
+export async function toHAST(text, type) {
   const key = cacheKey(text, type);
   const cached = readFromCache(key);
   if (cached) {
@@ -64,10 +62,10 @@ export default async function toHAST(text, type) {
   }
 
   let value = null;
-  if (type === 'markdown') {
+  if (type === "markdown") {
     const mdast = markdownProcessor.parse(text);
     value = await markdownProcessor.run(mdast);
-  } else if (type === 'html') {
+  } else if (type === "html") {
     value = htmlProcessor.parse(text);
   }
 
@@ -78,3 +76,4 @@ export default async function toHAST(text, type) {
 
   return null;
 }
+

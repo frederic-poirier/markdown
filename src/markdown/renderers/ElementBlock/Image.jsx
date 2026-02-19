@@ -1,5 +1,5 @@
 import { Show, createResource, createSignal } from 'solid-js';
-import { getBadgeData } from '../../utils/useBadge';
+import { getBadgeData } from '../../../utils/useBadge';
 import ArrowUpRight from 'lucide-solid/icons/arrow-up-right';
 
 function isBadge(source) {

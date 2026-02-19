@@ -1,9 +1,8 @@
 @import "tailwindcss";
 
-
 @theme {
-  --font-sans: 'Geist', sans-serif;
-  --font-mono: 'Geist Mono', monospace;
+  --font-sans: "Geist", sans-serif;
+  --font-mono: "Geist Mono", monospace;
   --color-neutral-50: oklch(98.5% 0 0);
   --color-neutral-100: oklch(97% 0 0);
   --color-neutral-200: oklch(92.2% 0 0);
@@ -12,14 +11,11 @@
 }
 
 :root {
-
-  font-family: 'Geist', sans-serif;
+  font-family: "Geist", sans-serif;
   line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: 'ss01', 'ss02', 'cv01';
-
-
+  font-feature-settings: "ss01", "ss02", "cv01";
 
   scrollbar-color: oklch(87% 0 0) transparent;
 
@@ -64,7 +60,7 @@
 }
 
 .shiki code {
-  font-family: 'Geist Mono', monospace !important;
+  font-family: "Geist Mono", monospace !important;
   font-size: 13px !important;
   line-height: 1.5 !important;
   background: none !important;
@@ -75,5 +71,5 @@
   inset: unset;
   position: fixed;
   top: anchor(bottom);
-  right: anchor(right)
+  right: anchor(right);
 }

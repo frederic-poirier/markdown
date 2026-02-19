@@ -1,5 +1,3 @@
-const GALLERY_MIN_IMAGES = 3;
-
 const NEUTRAL_WRAPPERS = new Set([
     'p',
     'a',
@@ -7,14 +5,8 @@ const NEUTRAL_WRAPPERS = new Set([
     'div'
 ]);
 
-export const LAYOUT_RULES = [
-    createGalleryRule({
-        minImages: GALLERY_MIN_IMAGES
-    })
-];
-
-function createGalleryRule(options = {}) {
-    const minImages = options.minImages ?? GALLERY_MIN_IMAGES;
+export function createGalleryTransformRule(options = {}) {
+    const minImages = options.minImages ?? 3;
 
     return {
         name: 'gallery-from-adjacent-images',
