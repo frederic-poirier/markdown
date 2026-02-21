@@ -13,11 +13,13 @@ import { Selectable } from '../components/ui/Selectable.jsx';
 import { SelectionProvider, useSelection } from "../context/SelectionContext.jsx"
 import {
   getDisplayName,
+  getExtensionFromName,
   getFileRouteFromFile,
   getInputAcceptValue,
   isProbablyTextFile,
   resolveFileMode
 } from '../utils/fileMode.js';
+import { importPdfAsMarkdown } from '../db/pdfImport.js';
 
 export default function Home() {
   const { user } = useAuth();
@@ -32,7 +34,6 @@ export default function Home() {
 
   const [selectedFile, setSelectedFile] = createSignal(null);
   const { Modal, toggleModal } = useModal();
-  const selection = useSelection()
 
   const openFileMenu = (event, file) => {
     setSelectedFile(file);
@@ -52,21 +53,23 @@ export default function Home() {
         <InputFile addFileOptimistic={addFileOptimistic} />
       </header>
 
-      <section class="space-y-2">
-        <h2 class="text-sm font-medium text-neutral-600 uppercase tracking-wide">Local</h2>
-        <FileList files={localFilesWithoutCloudFiles()} handleClick={openFileMenu} emptyText="No local files" />
-      </section>
+      <SelectionProvider>
+        <section class="space-y-2">
+          <h2 class="text-sm font-medium text-neutral-600 uppercase tracking-wide">Local</h2>
+          <FileList files={localFilesWithoutCloudFiles()} handleClick={openFileMenu} emptyText="No local files" />
+        </section>
 
-      <section class="space-y-2">
-        <div class="flex items-center justify-between">
-          <h2 class="text-sm font-medium text-neutral-600 uppercase tracking-wide">Cloud</h2>
-          <Show when={!user()}>
-            <A href="/login" class="text-xs text-neutral-600 underline">Login to sync</A>
-          </Show>
-        </div>
-        <FileList files={cloudFiles()} handleClick={null} emptyText="No cloud files" />
-      </section>
+        <section class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-medium text-neutral-600 uppercase tracking-wide">Cloud</h2>
+            <Show when={!user()}>
+              <A href="/login" class="text-xs text-neutral-600 underline">Login to sync</A>
+            </Show>
+          </div>
+          <FileList files={cloudFiles()} handleClick={null} emptyText="No cloud files" />
+        </section>
 
+      </SelectionProvider>
       <Modal>
         <FileMenu
           file={selectedFile}
@@ -76,16 +79,6 @@ export default function Home() {
           setCloudSyncOptimistic={setCloudSyncOptimistic}
         />
       </Modal>
-      <Show when={selection.hasSelection()}>
-        <div class="fixed bottom-4 w-60 bg-neutral-100 border border-neutral-200 rounded-xl p-2 starting:opacity-0 starting:scale-95 opacity-100 scale-100 transition-all ease-out duration-300">
-          <ul>
-            <li>Delete all</li>
-            <li>Sync all</li>
-            <li>Unsync all</li>
-            <li>Open all</li>
-          </ul>
-        </div>
-      </Show>
     </section>
   );
 }
@@ -211,8 +204,47 @@ function InputFile(props) {
     const file = event.target.files[0];
 
     if (file) {
+      const extension = getExtensionFromName(file.name);
+
+      if (extension === 'pdf') {
+        (async () => {
+          try {
+            const imported = await importPdfAsMarkdown(file);
+            const mode = resolveFileMode(imported.name);
+            const { id, alreadyExist } = await props.addFileOptimistic({
+              name: imported.name,
+              content: imported.content,
+              sourceFormat: mode.sourceFormat,
+              renderMode: mode.renderMode
+            });
+
+            const destination = getFileRouteFromFile({
+              id,
+              name: imported.name,
+              renderMode: mode.renderMode
+            });
+
+            if (alreadyExist) {
+              toast('File already stored', {
+                action: {
+                  label: `Open ${imported.name}`,
+                  onClick: () => navigate(destination)
+                }
+              });
+              return;
+            }
+
+            navigate(destination);
+          } catch (error) {
+            toast.error(error instanceof Error ? error.message : `Error while converting ${file.name}`);
+          }
+        })();
+
+        return;
+      }
+
       if (!isProbablyTextFile(file)) {
-        toast.error(`Unsupported file type for ${file.name}. Only text files are supported for now.`);
+        toast.error(`Unsupported file type for ${file.name}. Only text/code/PDF files are supported for now.`);
         return;
       }
 
@@ -279,5 +311,3 @@ function InputFile(props) {
     </label>
   );
 }
-
-

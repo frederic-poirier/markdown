@@ -9,23 +9,20 @@ import Login from "./pages/Login.jsx";
 import MediaView from "./pages/MediaView.jsx";
 import TextView from "./pages/TextView.jsx";
 import AuthSuccess from "./pages/AuthSuccess.jsx";
-import { SelectionProvider } from "./context/SelectionContext.jsx";
 
 export default function App() {
   return (
     <AuthProvider>
       <FilesProvider>
-        <SelectionProvider>
-          <Toaster position="bottom-right" />
-          <Router root={Layout}>
-            <Route path="/" component={Home} />
-            <Route path="/text/:id" component={TextView} />
-            <Route path="/code/:id" component={CodeView} />
-            <Route path="/media/:id" component={MediaView} />
-            <Route path="/login" component={Login} />
-            <Route path="/success" component={AuthSuccess} />
-          </Router>
-        </SelectionProvider>
+        <Toaster position="bottom-right" />
+        <Router root={Layout}>
+          <Route path="/" component={Home} />
+          <Route path="/text/:id" component={TextView} />
+          <Route path="/code/:id" component={CodeView} />
+          <Route path="/media/:id" component={MediaView} />
+          <Route path="/login" component={Login} />
+          <Route path="/success" component={AuthSuccess} />
+        </Router>
       </FilesProvider>
     </AuthProvider>
   );

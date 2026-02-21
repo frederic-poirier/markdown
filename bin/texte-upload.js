@@ -17,10 +17,12 @@ import process from 'node:process';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createInterface } from 'node:readline/promises';
+import JSZip from 'jszip';
 
 const execFileAsync = promisify(execFile);
 
 const DEFAULT_BASE_URL = 'https://texte.zip';
+const DEFAULT_PDF_SERVICE_URL = 'http://localhost:5060';
 const SESSION_FILE = path.join(os.homedir(), '.config', 'texte-upload', 'session.json');
 const KNOWN_BINARY_EXTENSIONS = new Set([
     '7z', 'avi', 'bmp', 'doc', 'docx', 'exe', 'ico', 'mov', 'mp3', 'mp4', 'odt',
@@ -28,24 +30,28 @@ const KNOWN_BINARY_EXTENSIONS = new Set([
 ]);
 
 function printHelp() {
-    console.log(`texte-upload - Upload text/code files to texte API (R2/D1)
+    console.log(`texte-upload - Upload text/code/PDF files to texte API (R2/D1)
 
 Usage:
   texte-upload <file-or-dir> [more paths...] [options]
 
 Options:
   --url <baseUrl>         API base URL (default: ${DEFAULT_BASE_URL})
+  --pdf-url <pdfUrl>      PDF service URL for conversion (default: ${DEFAULT_PDF_SERVICE_URL})
   --cookie <cookie>       Raw Cookie header value (ex: "session=...")
     --browser <name>        auto | firefox | chromium (default: auto)
   --help                  Show help
 
 Environment:
   TEXTE_API_URL           Default base URL (override --url)
+  TEXTE_PDF_SERVICE_URL   PDF conversion base URL (override --pdf-url)
   TEXTE_COOKIE            Raw cookie header value
   TEXTE_SESSION           Session token only (auto-transformed to session=...)
 
 Examples:
   texte-upload ./notes.md
+  texte-upload ./scan.pdf
+  texte-upload ./scan.pdf --pdf-url http://localhost:5060
   texte-upload ./docs --url http://localhost:7000 --cookie "session=abc"
     texte-upload ./docs --browser firefox
   TEXTE_SESSION=abc texte-upload ./docs ./README.md
@@ -56,6 +62,7 @@ function parseArgs(argv) {
     const paths = [];
     const options = {
         baseUrl: process.env.TEXTE_API_URL || DEFAULT_BASE_URL,
+        pdfServiceUrl: process.env.TEXTE_PDF_SERVICE_URL || DEFAULT_PDF_SERVICE_URL,
         cookie: process.env.TEXTE_COOKIE || null,
         browser: 'auto'
     };
@@ -76,6 +83,12 @@ function parseArgs(argv) {
 
         if (token === '--cookie') {
             options.cookie = argv[index + 1] || '';
+            index += 1;
+            continue;
+        }
+
+        if (token === '--pdf-url') {
+            options.pdfServiceUrl = argv[index + 1] || '';
             index += 1;
             continue;
         }
@@ -384,6 +397,10 @@ function getExtensionFromPath(filePath) {
     return extension.startsWith('.') ? extension.slice(1) : extension;
 }
 
+function isPdfPath(filePath) {
+    return getExtensionFromPath(filePath) === 'pdf';
+}
+
 function isProbablyTextPath(filePath) {
     const extension = getExtensionFromPath(filePath);
     if (!extension) return true;
@@ -396,7 +413,7 @@ async function collectTextFiles(inputPath) {
     const info = await stat(resolvedPath);
 
     if (info.isFile()) {
-        if (isProbablyTextPath(resolvedPath)) {
+        if (isProbablyTextPath(resolvedPath) || isPdfPath(resolvedPath)) {
             return [resolvedPath];
         }
 
@@ -419,7 +436,7 @@ async function collectTextFiles(inputPath) {
             continue;
         }
 
-        if (entry.isFile() && isProbablyTextPath(entryPath)) {
+        if (entry.isFile() && (isProbablyTextPath(entryPath) || isPdfPath(entryPath))) {
             files.push(entryPath);
         }
     }
@@ -434,9 +451,122 @@ function computeId(content) {
 async function uploadFile({ filePath, baseUrl, cookie }) {
     const content = await readFile(filePath, 'utf8');
 
+    return uploadMarkdownContent({
+        name: path.basename(filePath),
+        content,
+        baseUrl,
+        cookie,
+        sourcePath: filePath
+    });
+}
+
+function toMarkdownName(filePath) {
+    const base = path.basename(filePath);
+    if (base.toLowerCase().endsWith('.pdf')) {
+        return `${base.slice(0, -4)}.md`;
+    }
+
+    return `${base}.md`;
+}
+
+async function extractMarkdownFromZip(zipBuffer, preferredName) {
+    const zip = await JSZip.loadAsync(zipBuffer);
+    const preferred = zip.file(preferredName);
+
+    if (preferred) {
+        const content = await preferred.async('string');
+        return content;
+    }
+
+    const entry = Object
+        .values(zip.files)
+        .find((file) => !file.dir && file.name.toLowerCase().endsWith('.md'));
+
+    if (!entry) {
+        throw new Error('Converted markdown file not found in ZIP response');
+    }
+
+    return await entry.async('string');
+}
+
+async function importPdfAsMarkdown({ filePath, baseUrl, pdfServiceUrl, cookie }) {
+    const endpoints = [
+        {
+            url: `${baseUrl.replace(/\/$/, '')}/api/pdf/markdown`,
+            includeCookie: true,
+            source: 'api'
+        }
+    ];
+
+    if (pdfServiceUrl) {
+        endpoints.unshift({
+            url: `${pdfServiceUrl.replace(/\/$/, '')}/markdown`,
+            includeCookie: false,
+            source: 'local'
+        });
+    }
+
+    const fileBuffer = await readFile(filePath);
+    const outputName = toMarkdownName(filePath);
+
+    let lastError = null;
+
+    for (const endpoint of endpoints) {
+        const formData = new FormData();
+        formData.append('file', new Blob([fileBuffer], { type: 'application/pdf' }), path.basename(filePath));
+        formData.append('output_file', outputName);
+        formData.append('fast', 'true');
+
+        const headers = {};
+        if (cookie && endpoint.includeCookie) {
+            headers.Cookie = cookie;
+        }
+
+        try {
+            const response = await fetch(endpoint.url, {
+                method: 'POST',
+                headers,
+                body: formData
+            });
+
+            if (!response.ok) {
+                const body = await response.text();
+                let parsed = null;
+
+                try {
+                    parsed = body ? JSON.parse(body) : null;
+                } catch {
+                    parsed = null;
+                }
+
+                const reason = parsed?.detail || parsed?.error || body;
+                throw new Error(reason || `HTTP ${response.status}`);
+            }
+
+            const zipBuffer = await response.arrayBuffer();
+            const content = await extractMarkdownFromZip(zipBuffer, outputName);
+
+            if (!content.trim()) {
+                throw new Error('Converted markdown is empty');
+            }
+
+            return {
+                name: outputName,
+                content
+            };
+        } catch (error) {
+            lastError = new Error(`[${endpoint.source}] ${error.message || error}`);
+        }
+    }
+
+    throw lastError || new Error('PDF conversion failed');
+}
+
+async function uploadMarkdownContent({ name, content, baseUrl, cookie, sourcePath }) {
+
     if (!content.trim()) {
         return {
-            filePath,
+            filePath: sourcePath,
             skipped: true,
             reason: 'empty-content'
         };
@@ -457,7 +587,7 @@ async function uploadFile({ filePath, baseUrl, cookie }) {
         method: 'POST',
         headers,
         body: JSON.stringify({
-            name: path.basename(filePath),
+            name,
             content
         })
     });
@@ -473,11 +603,11 @@ async function uploadFile({ filePath, baseUrl, cookie }) {
 
     if (!response.ok) {
         const reason = parsed?.error || body || `HTTP ${response.status}`;
-        throw new Error(`${path.basename(filePath)}: ${reason}`);
+        throw new Error(`${name}: ${reason}`);
     }
 
     return {
-        filePath,
+        filePath: sourcePath,
         id,
         alreadyExist: Boolean(parsed?.alreadyExist),
         skipped: false
@@ -504,7 +634,7 @@ async function main() {
     const files = [...new Set(discovered.flat())];
 
     if (!files.length) {
-        console.error('No text/code files found from the provided paths.');
+        console.error('No importable files found from the provided paths.');
         process.exitCode = 1;
         return;
     }
@@ -514,14 +644,35 @@ async function main() {
     let uploadedCount = 0;
     let skippedCount = 0;
     let existingCount = 0;
+    let convertedPdfCount = 0;
 
     for (const filePath of files) {
         try {
-            const result = await uploadFile({
-                filePath,
-                baseUrl: options.baseUrl,
-                cookie: sessionCookie
-            });
+            const isPdf = isPdfPath(filePath);
+            const result = isPdf
+                ? await (async () => {
+                    const converted = await importPdfAsMarkdown({
+                        filePath,
+                        baseUrl: options.baseUrl,
+                        pdfServiceUrl: options.pdfServiceUrl,
+                        cookie: sessionCookie
+                    });
+
+                    convertedPdfCount += 1;
+
+                    return await uploadMarkdownContent({
+                        name: converted.name,
+                        content: converted.content,
+                        baseUrl: options.baseUrl,
+                        cookie: sessionCookie,
+                        sourcePath: filePath
+                    });
+                })()
+                : await uploadFile({
+                    filePath,
+                    baseUrl: options.baseUrl,
+                    cookie: sessionCookie
+                });
 
             if (result.skipped) {
                 skippedCount += 1;
@@ -546,6 +697,7 @@ async function main() {
     console.log('');
     console.log('Summary');
     console.log(`- uploaded: ${uploadedCount}`);
+    console.log(`- converted pdf: ${convertedPdfCount}`);
     console.log(`- already existing: ${existingCount}`);
     console.log(`- skipped: ${skippedCount}`);
 }

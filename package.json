@@ -8,17 +8,19 @@
   },
   "scripts": {
     "dev": "concurrently \"vite\" \"wrangler pages dev --proxy 7000\"",
+    "dev:clean": "sh -c 'for p in 7000 8788; do pid=$(lsof -ti tcp:$p); [ -n \"$pid\" ] && kill -9 $pid || true; done' && concurrently \"vite\" \"wrangler pages dev --proxy 7000\"",
+    "start": "npm run dev:clean",
     "build": "vite build"
   },
   "dependencies": {
     "@panzoom/panzoom": "^4.6.1",
     "@solidjs/router": "^0.15.4",
+    "jszip": "^3.10.1",
     "localforage": "^1.10.0",
     "lucide-solid": "^0.574.0",
     "mdast-util-from-markdown": "^2.0.2",
     "mermaid": "^11.12.3",
     "micromark-util-symbol": "^2.0.1",
-    "rehype-parse": "^9.0.1",
     "rehype-raw": "^7.0.0",
     "remark": "^15.0.1",
     "remark-mark-plus": "^1.0.21",
@@ -28,7 +30,7 @@
     "solid-sonner": "^0.2.8",
     "turndown": "^7.2.2",
     "unist-util-visit": "^5.1.0",
-    "vite-plugin-pwa": "^1.2.0",
+    "vite-plugin-pwa": "^0.11.3",
     "wrangler": "^4.66.0"
   },
   "devDependencies": {

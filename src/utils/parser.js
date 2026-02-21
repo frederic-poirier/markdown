@@ -16,7 +16,8 @@ export function htmlToMarkdown(html) {
   return turndownProcessor.turndown(html)
 }
 
-export function markdownToHAST(markdown) {
-  return markdownProcessor.parse(markdown)
+export async function markdownToHAST(markdown) {
+  const mdast = markdownProcessor.parse(markdown)
+  const hast = await markdownProcessor.run(mdast)
+  return hast
 }
-

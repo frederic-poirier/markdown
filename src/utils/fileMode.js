@@ -132,7 +132,9 @@ export function getInputAcceptValue() {
         ...new Set([
             ...codeValues,
             ...textValues,
+            '.pdf',
             'text/*',
+            'application/pdf',
             'application/json',
             'application/xml'
         ])

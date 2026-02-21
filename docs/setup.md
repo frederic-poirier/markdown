@@ -39,7 +39,7 @@ Autour du core s'articuleront plusieurs petits services indépendants. Ces servi
 
 **File**
 
-- PDF to Markdown → pdf-layout-analysis (fallback : Pandoc)
+- PDF to Markdown → Marker (service CPU derriere tunnel Cloudflare)
 - DOCX to Markdown → Pandoc
 - Web to Markdown → trafilatura
 - Documentation extraction
@@ -70,3 +70,82 @@ La base de données sera organisée en trois couches. La première, **IndexedDB*
 #### Services
 
 Les services sont de petits serveurs HTTP accessibles via le tunnel Cloudflare.
+
+### Proxy PDF (Cloudflare Functions -> Tunnel)
+
+- Le proxy API est exposé via `/api/pdf/*`.
+- Les routes du proxy exigent une session utilisateur valide (`requireAuth`).
+- Le tunnel n'est jamais appelé directement depuis le navigateur.
+
+Variables d'environnement côté Functions :
+
+- `CF_ACCESS_CLIENT_ID` : Service Token Client ID Cloudflare Access.
+- `CF_ACCESS_CLIENT_SECRET` : Service Token Secret Cloudflare Access.
+- `PDF_SERVICE_BASE_URL` (optionnel) : URL de base du service PDF (par défaut `https://pdf.texte.zip`).
+
+Exemples :
+
+```bash
+# Health check
+curl http://localhost:7000/api/pdf/
+
+# Conversion markdown
+curl -X POST \
+  -F 'file=@document.pdf' \
+  -F 'output_file=document.md' \
+  http://localhost:7000/api/pdf/markdown
+```
+
+### Service Marker (CPU) derriere le tunnel
+
+Le proxy `/api/pdf/*` est deja en place. Il faut simplement deployer un service HTTP Marker compatible avec:
+
+- `GET /`
+- `POST /markdown` (multipart `file`, `output_file`, `fast`) -> ZIP contenant un `.md`
+
+Un bridge pret a l'emploi est fourni dans `services/marker-bridge/`.
+
+Installation rapide (serveur CPU):
+
+```bash
+cd services/marker-bridge
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+uvicorn app:app --host 127.0.0.1 --port 8001
+```
+
+Exemple de test direct du service:
+
+```bash
+curl -X POST \
+  -F 'file=@document.pdf' \
+  -F 'output_file=document.md' \
+  -F 'fast=true' \
+  http://127.0.0.1:8001/markdown \
+  --output document.zip
+```
+
+Cloudflare Tunnel + Access:
+
+- Publier le service sur un hostname prive (ex: `pdf.texte.zip`) via `cloudflared tunnel`.
+- Proteger ce hostname avec Cloudflare Access (Service Token).
+- Configurer cote Functions:
+  - `PDF_SERVICE_BASE_URL=https://pdf.texte.zip`
+  - `CF_ACCESS_CLIENT_ID=<service_token_client_id>`
+  - `CF_ACCESS_CLIENT_SECRET=<service_token_secret>`
+
+Verification bout en bout via le proxy Functions:
+
+```bash
+# health
+curl http://localhost:7000/api/pdf/
+
+# conversion (passe par Functions -> tunnel -> Marker)
+curl -X POST \
+  -F 'file=@document.pdf' \
+  -F 'output_file=document.md' \
+  http://localhost:7000/api/pdf/markdown \
+  --output document.zip
+```

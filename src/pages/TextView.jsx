@@ -1,21 +1,8 @@
 import { useParams } from "@solidjs/router";
-import { createEffect, createResource, onCleanup, Show } from "solid-js";
+import { createResource, Show } from "solid-js";
 import { useFiles } from "../context/FilesContext.jsx";
-import { toHAST } from "../markdown/toHAST.jsx";
+import { markdownToHAST } from "../markdown/parsers.js"
 import { RenderHAST } from "../markdown/renderHAST.jsx";
-
-const DEFAULT_TITLE = "Text";
-
-function ensureDescriptionMeta() {
-  let meta = document.querySelector('meta[name="description"]');
-  if (!meta) {
-    meta = document.createElement("meta");
-    meta.setAttribute("name", "description");
-    document.head.appendChild(meta);
-  }
-
-  return meta;
-}
 
 export default function TextView() {
   const params = useParams();
@@ -23,25 +10,8 @@ export default function TextView() {
   const [file] = createResource(() => params.id, getFileFromAnyStorage);
   const [ast] = createResource(
     () => file(),
-    (entry) => toHAST(entry.content, "markdown"),
+    (entry) => markdownToHAST(entry.content),
   );
-
-  createEffect(() => {
-    const filename = file()?.name?.trim();
-    const title = filename || DEFAULT_TITLE;
-    document.title = title;
-
-    const description = filename ? `Text - ${filename}` : DEFAULT_TITLE;
-
-    const descriptionMeta = ensureDescriptionMeta();
-    descriptionMeta.setAttribute("content", description);
-  });
-
-  onCleanup(() => {
-    document.title = DEFAULT_TITLE;
-    const descriptionMeta = ensureDescriptionMeta();
-    descriptionMeta.setAttribute("content", DEFAULT_TITLE);
-  });
 
   return (
     <Show when={ast()}>
