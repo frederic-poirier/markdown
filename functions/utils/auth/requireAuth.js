@@ -6,7 +6,7 @@ export async function requireAuth(request, env) {
 
   if (!auth) {
     return new Response(
-      JSON.stringify({ error: 'Non autorisé' }),
+      JSON.stringify({ error: 'UNAUTHORIZED' }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     );
   }

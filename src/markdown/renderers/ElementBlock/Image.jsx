@@ -1,6 +1,5 @@
-import { Show, createResource, createSignal } from 'solid-js';
-import { getBadgeData } from '../../../utils/useBadge';
-import ArrowUpRight from 'lucide-solid/icons/arrow-up-right';
+import { Match, Show, Switch, createSignal } from 'solid-js';
+import { Badge } from './Badge.jsx';
 
 function isBadge(source) {
   const shieldBadge = 'https://img.shields.io'
@@ -19,17 +18,22 @@ export function Image(props) {
   const [hasError, setHasError] = createSignal(false);
 
   return (
-    <Show when={!isBadge(props.src)} fallback={Badge(props)}>
-      <Show when={!hasError()} fallback={imagePlaceholder()}>
-        <img
-          src={props.src}
-          alt={props.alt || ''}
-          title={props.title}
-          onError={() => setHasError(true)}
-          class="max-w-full h-auto rounded-lg"
-        />
-      </Show>
-    </Show>
+    <Switch>
+      <Match when={isBadge(props.src)}>
+        <Badge {...props} />
+      </Match>
+      <Match when={true}>
+        <Show when={!hasError()} fallback={imagePlaceholder()}>
+          <img
+            src={props.src}
+            alt={props.alt || ''}
+            title={props.title}
+            onError={() => setHasError(true)}
+            class="max-w-full h-auto rounded-lg"
+          />
+        </Show>
+      </Match>
+    </Switch>
   );
 }
 
@@ -40,31 +44,3 @@ function imagePlaceholder() {
     </div>
   )
 }
-
-function Badge(props) {
-  const [badgeData] = createResource(props.src, getBadgeData)
-
-  return (
-    <Show when={badgeData()} fallback="chargement">
-      <span
-        href={props.href}
-        className='
-        py-0.5 px-2 text-sm w-fit rounded-lg 
-        bg-neutral-100 border border-neutral-200
-        items-center inline-flex gap-2 capitalize
-        hover:bg-neutral-200 hover:text-neutral-950 hover:border-neutral-300
-        '
-      >
-        <Show when={badgeData().logo}>
-          <span
-            className='*:w-3 *:h-3 logo [&_svg]:fill-neutral-600'
-            innerHTML={badgeData().logo}
-          />
-        </Show>
-        {badgeData().label} {badgeData().value}
-        <ArrowUpRight size={14} />
-      </span>
-    </Show>
-  );
-}
-

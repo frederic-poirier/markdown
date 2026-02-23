@@ -8,6 +8,10 @@ export function useModal() {
   onMount(() => {
     if (modalREF) {
       modalREF.style.setProperty("position-anchor", "--" + id)
+      modalREF.style.setProperty("inset", "unset")
+      modalREF.style.setProperty("position", "fixed")
+      modalREF.style.setProperty("top", "anchor(bottom)")
+      modalREF.style.setProperty("right", "anchor(right)")
     }
   })
 
@@ -51,7 +55,6 @@ export function useModal() {
         popover
         id={id}
         class="
-        modal 
         bg-neutral-100 text-neutral-600 border border-neutral-200 
         opacity-100 scale-100
         starting:opacity-0 starting:scale-95
@@ -65,4 +68,3 @@ export function useModal() {
   }
   return { openModal, closeModal, toggleModal, Modal }
 }
-

@@ -18,8 +18,8 @@ function ensureDescriptionMeta() {
 
 export default function CodeView() {
   const params = useParams();
-  const { getFileFromAnyStorage } = useFiles();
-  const [file] = createResource(() => params.id, getFileFromAnyStorage);
+  const { getFile } = useFiles();
+  const [file] = createResource(() => params.id, getFile);
 
   createEffect(() => {
     const filename = file()?.name?.trim();

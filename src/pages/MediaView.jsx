@@ -4,8 +4,8 @@ import { useFiles } from '../context/FilesContext.jsx';
 
 export default function MediaView() {
     const params = useParams();
-    const { getFileFromAnyStorage } = useFiles();
-    const [file] = createResource(() => params.id, getFileFromAnyStorage);
+    const { getFile } = useFiles();
+    const [file] = createResource(() => params.id, getFile);
 
     return (
         <Show when={file()} fallback="No file imported">

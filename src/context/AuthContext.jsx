@@ -1,4 +1,4 @@
-import { createContext, useContext, createSignal, onMount, onCleanup } from 'solid-js';
+import { createContext, useContext, createSignal, onMount } from 'solid-js';
 
 const AuthContext = createContext();
 
@@ -31,28 +31,13 @@ export function AuthProvider(props) {
   };
 
   const login = () => {
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-
-    window.open(
-      '/auth/login',
-      'oauth-popup',
-      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`
-    );
+    window.location.href = '/auth/login';
   };
 
   onMount(() => {
     fetchUser();
 
-    const handleMessage = (event) => {
-      if (event.origin !== window.location.origin) return;
-      if (event.data?.type === 'oauth-success') fetchUser();
-    };
-
-    window.addEventListener('message', handleMessage);
-    onCleanup(() => window.removeEventListener('message', handleMessage));
+    return;
   });
 
   return (
@@ -65,5 +50,3 @@ export function AuthProvider(props) {
 export function useAuth() {
   return useContext(AuthContext);
 }
-
-

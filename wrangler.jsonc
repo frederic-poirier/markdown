@@ -5,15 +5,15 @@
 	"pages_build_output_dir": "dist",
 	"r2_buckets": [
 		{
-			"binding": "FILES_BUCKET",
-			"bucket_name": "texte-files"
+			"bucket_name": "texte-r2",
+			"binding": "texte_r2",
 		}
 	],
 	"d1_databases": [
 		{
-			"binding": "DB",
+			"binding": "texte_d1",
 			"database_name": "texte-d1",
-			"database_id": "7453e4c8-01b3-4ba3-9536-2c44786cc6eb",
+			"database_id": "e9b50ed2-46fe-4dc0-8994-6af52910619c",
 		}
 	]
 }

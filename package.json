@@ -30,10 +30,10 @@
     "solid-sonner": "^0.2.8",
     "turndown": "^7.2.2",
     "unist-util-visit": "^5.1.0",
-    "vite-plugin-pwa": "^0.11.3",
     "wrangler": "^4.66.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260302.0",
     "@tailwindcss/vite": "^4.1.18",
     "@toolwind/anchors": "^1.0.10",
     "concurrently": "^9.2.1",
@@ -42,6 +42,7 @@
     "tailwindcss": "^4.1.18",
     "unified": "^11.0.5",
     "vite": "^7.3.1",
+    "vite-plugin-pwa": "^1.2.0",
     "vite-plugin-solid": "^2.11.10"
   }
 }

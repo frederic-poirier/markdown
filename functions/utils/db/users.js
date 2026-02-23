@@ -1,10 +1,13 @@
-export const addUser = async (uid, email, name, now, env) => {
-    if (!env.DB) {
-        console.log('DB not configured, skipping user persistence');
-        return;
-    }
+export const addUser = async (uid, email, name, env) => {
+  const db = env.texte_d1 || env.DB;
+  if (!db) {
+    console.log('DB not configured, skipping user persistence');
+    return;
+  }
 
-    await env.DB.prepare(`
+  const now = Math.floor(Date.now() / 1000);
+
+  await db.prepare(`
         INSERT INTO users (id, email, name, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
@@ -12,7 +15,6 @@ export const addUser = async (uid, email, name, now, env) => {
             name = excluded.name,
             updated_at = excluded.updated_at
     `)
-        .bind(uid, email, name, now, now)
-        .run();
+    .bind(uid, email, name, now, now)
+    .run();
 };
-

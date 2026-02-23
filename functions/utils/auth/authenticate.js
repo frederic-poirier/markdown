@@ -15,7 +15,7 @@ export async function authenticateUser(request, env) {
   let refreshed = false
   let newToken = null;
 
-  if (payload - now < REFRESH_THRESHOLD) { // Sliding expriation
+  if (payload.exp - now < REFRESH_THRESHOLD) { // Sliding expiration
     refreshed = true;
     newToken = signSession(
       { ...payload, exp: now + SESSION_DURATION },
@@ -32,4 +32,3 @@ export async function authenticateUser(request, env) {
     newToken
   };
 }
-

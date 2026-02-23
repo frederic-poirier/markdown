@@ -39,26 +39,26 @@ bun install
 
 ### Global CLI upload to texte.zip
 
-You can install the project CLI globally and upload `.md` files through the API (`/api/files/:id`), which stores data in R2 + D1 index.
+You can install the project CLI globally and upload markdown/code files through the API (`/api/file/:id`), which stores data in R2 + D1 index.
 
 ```bash
 # from this repository root
 npm link
 
-# auto-read session from Firefox/Chromium, prompt OAuth if invalid
+# prompts for a session token if missing/invalid
 texte-upload ./README.md
 
 # upload one file to production
 TEXTE_SESSION="<session_token>" texte-upload ./README.md
 
 # upload a directory to localhost (dev)
-texte-upload ./docs --url http://localhost:7000 --cookie "session=<session_token>"
+texte-upload ./docs --url http://localhost:7000
 ```
 
-The command recursively scans directories and uploads all `.md` files found.
+The command recursively scans directories and uploads markdown/code files only.
 
-It stores the last valid session cookie in `~/.config/texte-upload/session.json`.
-If no valid cookie is found, it opens `${baseUrl}/auth/login` and retries reading from browser cookies.
+It stores the last valid session token in `~/.config/texte-upload/session.json`.
+If no valid token is found, it asks for a new token in the terminal.
 
 To fetch a session token, login first in browser:
 
@@ -66,14 +66,7 @@ To fetch a session token, login first in browser:
 xdg-open "http://localhost:7000/auth/login"
 ```
 
-Then copy cookie `session` from browser devtools and pass it via `TEXTE_SESSION`, `TEXTE_COOKIE`, or `--cookie`.
-
-You can force browser source:
-
-```bash
-texte-upload ./docs --browser firefox
-texte-upload ./docs --browser chromium
-```
+Then copy cookie `session` from browser devtools and pass only the token value via `TEXTE_SESSION` or `--token`.
 
 ### Development Mode
 
@@ -237,7 +230,7 @@ Markdown file
 ## API Endpoints
 
 - `GET /api/markdown?path=<file>` - Returns HAST JSON for markdown file
-- `GET /api/files` - Returns list of all markdown files
+- `GET /api/file/all` - Returns list of all file metadata
 - `WS /ws` - WebSocket for hot reload notifications
 
 ## Extending

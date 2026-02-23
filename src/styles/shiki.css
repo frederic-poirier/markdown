@@ -1,0 +1,26 @@
+.shiki {
+  margin: 0 !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem !important;
+  overflow-x: auto !important;
+  background: none !important;
+  background-color: transparent !important;
+}
+
+.shiki code {
+  font-family: "Geist Mono", monospace !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  background: none !important;
+  background-color: transparent !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .shiki,
+  .shiki span {
+    color: var(--shiki-dark) !important;
+    font-style: var(--shiki-dark-font-style) !important;
+    font-weight: var(--shiki-dark-font-weight) !important;
+    text-decoration: var(--shiki-dark-text-decoration) !important;
+  }
+}

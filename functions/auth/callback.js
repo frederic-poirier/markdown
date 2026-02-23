@@ -31,12 +31,24 @@ export async function onRequest({ request, env }) {
 
     const { id_token } = await tokenRes.json();
     const payload = await verifyIdToken(id_token, env.GOOGLE_CLIENT_ID);
-    const { sub, email, name } = payload;
+    const { sub, email, name, email_verified: emailVerified } = payload;
 
+    if (!emailVerified) {
+      return new Response('Adresse courriel non vérifiée.', { status: 403 });
+    }
+
+
+    if (!env.WHITELIST_EMAILS || !env.WHITELIST_EMAILS.trim()) {
+      return new Response(
+        'WHITELIST_EMAILS manquant sur le serveur.',
+        { status: 500 }
+      );
+    }
 
     const whitelistedEmails = env.WHITELIST_EMAILS
       .split(',')
-      .map(e => e.trim().toLowerCase());
+      .map((entry) => entry.trim().toLowerCase())
+      .filter(Boolean);
 
     if (!whitelistedEmails.includes(email.toLowerCase())) {
       return new Response(
@@ -48,7 +60,7 @@ export async function onRequest({ request, env }) {
 
 
     const now = Math.floor(Date.now() / 1000);
-    await addUser(sub, email, name, now, env)
+    await addUser(sub, email, name, env)
 
     const sessionPayload = {
       uid: sub,
@@ -60,7 +72,7 @@ export async function onRequest({ request, env }) {
     const token = await signSession(sessionPayload, env.SESSION_SECRET)
 
     const headers = new Headers();
-    headers.set('Location', '/success');
+    headers.set('Location', '/');
     headers.append('Set-Cookie', clearOAuthStateCookie());
     headers.append('Set-Cookie', buildSessionCookie(token, request));
 

@@ -1,86 +1,64 @@
-import { getFile } from "./file";
-import { resolveFileMode } from '../utils/fileMode.js';
+function buildError(message, status, body) {
+  const error = new Error(message);
+  error.status = status;
+  error.body = body;
+  return error;
+}
 
 async function parseJson(response) {
-    try {
-        return await response.json();
-    } catch {
-        return null;
-    }
+  try {
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+async function requestJson(url, options = {}) {
+  const response = await fetch(url, {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    },
+    ...options
+  });
+
+  const data = await parseJson(response);
+
+  if (!response.ok) {
+    const message =
+      typeof data?.error === 'string' && data.error.trim().length > 0
+        ? data.error
+        : `Request failed (${response.status})`;
+    throw buildError(message, response.status, data);
+  }
+
+  return data;
 }
 
 export async function getCloudFilesMetadata() {
-    const response = await fetch('/api/files/all');
-
-    if (response.status === 401) return [];
-
-    if (!response.ok) throw new Error('Failed to fetch cloud files');
-
-    const data = await parseJson(response);
-    return Array.isArray(data) ? data : [];
+  const data = await requestJson('/api/files/');
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getCloudFile(id) {
-    if (!id) return null;
-
-    const response = await fetch(`/api/files/${encodeURIComponent(id)}`);
-
-    if (response.status === 401 || response.status === 404) {
-        return null;
-    }
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch cloud file');
-    }
-
-    return await parseJson(response);
+  if (!id) throw new Error('id is required');
+  return await requestJson(`/api/files/${encodeURIComponent(id)}`);
 }
 
-export async function storeCloudFile(file) {
-    if (!file?.id || !file?.name) {
-        throw new Error('Invalid file payload');
-    }
-
-    const localFile = file?.content
-        ? file
-        : await getFile(file.id);
-
-    const content = typeof localFile?.content === 'string' ? localFile.content : '';
-    if (!content.trim()) {
-        throw new Error('Cannot store cloud file without content');
-    }
-
-    const mode = resolveFileMode(file.name || localFile?.name);
-    const response = await fetch(`/api/files/${encodeURIComponent(file.id)}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            name: file.name,
-            content,
-            sourceFormat: file.sourceFormat || localFile?.sourceFormat || mode.sourceFormat,
-            renderMode: file.renderMode || localFile?.renderMode || mode.renderMode
-        })
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to store cloud file');
-    }
-
-    return await parseJson(response);
+export async function storeCloudFile({ name, content }) {
+  return await requestJson(`/api/files/`, {
+    method: 'POST',
+    body: JSON.stringify({
+      name,
+      content
+    })
+  });
 }
 
 export async function removeCloudFile(id) {
-    if (!id) {
-        throw new Error('id is required');
-    }
+  if (!id) throw new Error('id is required');
 
-    const response = await fetch(`/api/files/${encodeURIComponent(id)}`, {
-        method: 'DELETE'
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to remove cloud file');
-    }
-
-    return await parseJson(response);
+  return await requestJson(`/api/files/${encodeURIComponent(id)}`, {
+    method: 'DELETE'
+  });
 }

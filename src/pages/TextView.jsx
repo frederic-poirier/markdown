@@ -6,8 +6,8 @@ import { RenderHAST } from "../markdown/renderHAST.jsx";
 
 export default function TextView() {
   const params = useParams();
-  const { getFileFromAnyStorage } = useFiles();
-  const [file] = createResource(() => params.id, getFileFromAnyStorage);
+  const { getFile } = useFiles();
+  const [file] = createResource(() => params.id, getFile);
   const [ast] = createResource(
     () => file(),
     (entry) => markdownToHAST(entry.content),

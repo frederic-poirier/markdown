@@ -1,95 +1,202 @@
 import { For, Show, createSignal } from 'solid-js';
-import { A, useNavigate } from '@solidjs/router';
-import Ellipsis from 'lucide-solid/icons/ellipsis';
+import { A } from '@solidjs/router';
+import Trash from 'lucide-solid/icons/trash-2';
 import Upload from 'lucide-solid/icons/upload';
 import { toast } from 'solid-sonner';
-import { useAuth } from '../context/AuthContext.jsx';
 import { useFiles } from '../context/FilesContext.jsx';
-import { useModal } from '../components/ui/Modal.jsx';
-import { getSizePlaceholder, getTimeBetween, useNow } from '../utils/useMesure.js';
-import { ToggleButton } from '../components/ui/ToggleButton.jsx';
-import CloudUpload from 'lucide-solid/icons/cloud-upload';
-import { Selectable } from '../components/ui/Selectable.jsx';
-import { SelectionProvider, useSelection } from "../context/SelectionContext.jsx"
 import {
-  getDisplayName,
-  getExtensionFromName,
-  getFileRouteFromFile,
-  getInputAcceptValue,
-  isProbablyTextFile,
-  resolveFileMode
-} from '../utils/fileMode.js';
-import { importPdfAsMarkdown } from '../db/pdfImport.js';
+  BottomSheet,
+  BottomSheetFooter,
+  BottomSheetHeader,
+  BottomSheetSnap
+} from '../components/ui/BottomSheet.jsx';
+import { getDisplayName, getFileRouteFromFile, getInputAcceptValue, isProbablyTextFile } from '../utils/fileMode.js';
 
 export default function Home() {
-  const { user } = useAuth();
-  const {
-    localFiles,
-    cloudFiles,
-    cloudIds,
-    addFileOptimistic,
-    removeLocalOptimistic,
-    setCloudSyncOptimistic
-  } = useFiles();
-
-  const [selectedFile, setSelectedFile] = createSignal(null);
-  const { Modal, toggleModal } = useModal();
-
-  const openFileMenu = (event, file) => {
-    setSelectedFile(file);
-    toggleModal(event);
-  };
-
-  const localFilesWithoutCloudFiles = () =>
-    localFiles().filter((f) => !cloudIds().has(f.id))
-
-
+  const { files, addFile, removeFile } = useFiles();
 
   return (
-
-    <section class="space-y-6 relative">
+    <section class="space-y-4">
       <header class="flex justify-between items-center">
         <h1>Files</h1>
-        <InputFile addFileOptimistic={addFileOptimistic} />
+        <InputFile addFile={addFile} />
       </header>
 
-      <SelectionProvider>
-        <section class="space-y-2">
-          <h2 class="text-sm font-medium text-neutral-600 uppercase tracking-wide">Local</h2>
-          <FileList files={localFilesWithoutCloudFiles()} handleClick={openFileMenu} emptyText="No local files" />
-        </section>
-
-        <section class="space-y-2">
-          <div class="flex items-center justify-between">
-            <h2 class="text-sm font-medium text-neutral-600 uppercase tracking-wide">Cloud</h2>
-            <Show when={!user()}>
-              <A href="/login" class="text-xs text-neutral-600 underline">Login to sync</A>
-            </Show>
-          </div>
-          <FileList files={cloudFiles()} handleClick={null} emptyText="No cloud files" />
-        </section>
-
-      </SelectionProvider>
-      <Modal>
-        <FileMenu
-          file={selectedFile}
-          cloudIds={cloudIds}
-          canSync={Boolean(user())}
-          removeLocalOptimistic={removeLocalOptimistic}
-          setCloudSyncOptimistic={setCloudSyncOptimistic}
-        />
-      </Modal>
+      <FileList files={files()} isLoading={files.loading} onRemove={removeFile} />
     </section>
+  );
+}
+
+function InputFile(props) {
+  const [busy, setBusy] = createSignal(false);
+  const [pastedContent, setPastedContent] = createSignal('');
+  const [isSheetOpen, setIsSheetOpen] = createSignal(false);
+  let inputRef;
+  const pasteName = () => `pasted-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.md`;
+
+  const importContent = async (name, content, errorMessage) => {
+    try {
+      setBusy(true);
+      await props.addFile({ name, content });
+      setPastedContent('');
+      setIsSheetOpen(false);
+    } catch {
+      toast.error(errorMessage);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleChange = async (event) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+
+    if (!file) return;
+
+    if (!isProbablyTextFile(file)) {
+      toast.error('Only text files are supported for now');
+      return;
+    }
+
+    const content = await file.text();
+    await importContent(file.name, content, 'Upload failed');
+  };
+
+  const handleChooseFile = () => {
+    setIsSheetOpen(false);
+    inputRef?.click();
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      if (!clipboardText.trim()) {
+        toast.error('Clipboard is empty');
+        return;
+      }
+
+      setPastedContent((current) => {
+        if (!current.trim()) return clipboardText;
+        return `${current}\n${clipboardText}`;
+      });
+    } catch {
+      toast.error('Unable to read clipboard');
+    }
+  };
+
+  const handlePasteImport = async () => {
+    const content = pastedContent();
+    if (!content.trim()) {
+      toast.error('Nothing to import. Paste clipboard content first.');
+      return;
+    }
+
+    await importContent(pasteName(), content, 'Paste import failed');
+  };
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        class="sr-only"
+        accept={getInputAcceptValue()}
+        onChange={handleChange}
+        disabled={busy()}
+      />
+
+      <button
+        type="button"
+        onClick={() => setIsSheetOpen(true)}
+        disabled={busy()}
+        class="flex items-center gap-2 px-2 py-1 text-sm text-neutral-600 rounded-lg bg-neutral-100 hover:text-neutral-950 hover:bg-neutral-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        <Upload size={12} />
+        {busy() ? 'Uploading...' : 'Import'}
+      </button>
+
+      {isSheetOpen() && (
+        <div class="fixed inset-0 z-50 bg-black/30" onClick={() => setIsSheetOpen(false)}>
+          <BottomSheet
+            class="absolute bottom-0 left-0 right-0 mx-auto w-full max-w-2xl rounded-t-2xl bg-neutral-100 shadow-2xl"
+            contentHeight
+            nestedScroll
+            onClick={(event) => event.stopPropagation()}
+          >
+            <BottomSheetSnap initial snap="96px" />
+            <BottomSheetSnap snap="45vh" />
+            <BottomSheetSnap snap="80vh" />
+
+            <BottomSheetHeader>
+              <div class="px-4 pt-3 pb-2 text-sm font-medium text-neutral-700">Import</div>
+            </BottomSheetHeader>
+
+            <div class="px-4 pb-3 space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleChooseFile}
+                  disabled={busy()}
+                  class="px-2 py-2 text-sm rounded-lg bg-neutral-50 hover:bg-neutral-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Choose file
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePasteFromClipboard}
+                  disabled={busy()}
+                  class="px-2 py-2 text-sm rounded-lg bg-neutral-50 hover:bg-neutral-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Paste from clipboard
+                </button>
+              </div>
+
+              <pre class="max-h-56 overflow-auto rounded-lg border border-neutral-300 bg-white p-3 text-xs text-neutral-700 whitespace-pre-wrap break-words">
+                {pastedContent().trim() ? pastedContent() : 'Clipboard preview will appear here.'}
+              </pre>
+            </div>
+
+            <BottomSheetFooter>
+              <div class="px-4 pb-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSheetOpen(false)}
+                  disabled={busy()}
+                  class="px-2 py-2 text-sm rounded-lg bg-neutral-200 hover:bg-neutral-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePasteImport}
+                  disabled={busy()}
+                  class="px-2 py-2 text-sm rounded-lg bg-neutral-900 text-white hover:bg-neutral-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  Import pasted text
+                </button>
+              </div>
+            </BottomSheetFooter>
+          </BottomSheet>
+        </div>
+      )}
+    </>
   );
 }
 
 function FileList(props) {
   return (
     <ul class="divide-y divide-neutral-200">
-      <Show when={props.files?.length} fallback={<li class="py-3 text-sm text-neutral-600">{props.emptyText}</li>}>
+      <Show
+        when={props.files?.length}
+        fallback={
+          <li class="py-3 text-sm text-neutral-600">
+            {props.isLoading ? 'Loading...' : 'No cloud files'}
+          </li>
+        }
+      >
         <For each={props.files}>
           {(file) => (
-            <FileCard file={file} handleClick={props.handleClick} />
+            <FileCard file={file} onRemove={props.onRemove} />
           )}
         </For>
       </Show>
@@ -97,217 +204,31 @@ function FileList(props) {
   );
 }
 
-function FileMenu(props) {
-  const isSynced = () => {
-    const selected = props.file();
-    if (!selected) return false;
-    return props.cloudIds().has(selected.id);
-  };
-
-  const handleLocalRemoval = async () => {
-    const selected = props.file();
-    if (!selected) return;
-
-    try {
-      await props.removeLocalOptimistic(selected.id);
-    } catch {
-      toast.error('Local deletion failed');
-    }
-  };
-
-  const handleSyncChange = async (event) => {
-    const selected = props.file();
-    if (!selected || !props.canSync) return;
-
-    try {
-      await props.setCloudSyncOptimistic(selected.id, event.currentTarget.checked);
-    } catch {
-      event.currentTarget.checked = !event.currentTarget.checked;
-      toast.error('Cloud sync failed');
-    }
-  };
-
-  return (
-    <Show when={props.file()} fallback="No file selected">
-      <div class="flex p-1 flex-col *:hover:bg-neutral-200 *:not-[hr]:p-1 *:cursor-pointer *:not-[hr]:rounded-lg *:text-left *:w-full">
-        <ul class="flex gap-2 justify-between">
-          <li>
-            <ToggleButton state={isSynced} onClick={handleSyncChange}>
-              <CloudUpload size={24} />
-              Sync
-            </ToggleButton>
-          </li>
-        </ul>
-        <hr class="p-0 rounded-none text-neutral-200" />
-        <A href={getFileRouteFromFile(props.file())}>Open</A>
-        <a href={getFileRouteFromFile(props.file())} target="_blank">Open in a new tab</a>
-        <label class="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-neutral-200">
-          Sync with cloud
-          <input
-            type="checkbox"
-            class="sr-only"
-            checked={isSynced()}
-            disabled={!props.canSync}
-            onChange={handleSyncChange}
-          />
-          <Checkbox position={true} checked={isSynced()} />
-        </label>
-        <hr class="p-0 rounded-none text-neutral-200" />
-        <button onClick={handleLocalRemoval}>Delete the file</button>
-      </div>
-    </Show>
-  );
-}
-
 function FileCard(props) {
-  const now = useNow();
-  const hasMenu = () => typeof props.handleClick === 'function';
-
-  const selection = useSelection()
-  const isSelected = (id) => selection.isSelected(id)
-
-  return (
-    <Selectable id={props.file.id}>
-      <li
-        class="flex gap-2 first:rounded-t-lg last:rounded-b-lg"
-        classList={{ "bg-neutral-100 select-none": isSelected(props.file.id) }}>
-        <A
-          href={getFileRouteFromFile(props.file)}
-          class="
-        grid grid-cols-[1fr_auto] sm:grid-cols-[3fr_1fr_1fr] gap-2 items-center
-        *:text-neutral-500 py-2 w-full hover:*:text-neutral-950 focus:*:text-neutral-950
-      "
-        >
-          <h3 class="font-medium">{getDisplayName(props.file.name)}</h3>
-          <p class="hidden sm:block">
-            {getTimeBetween(props.file.createdAt, now())}
-          </p>
-          <p class="hidden sm:block">
-            {getSizePlaceholder(props.file.size)}
-          </p>
-        </A>
-        <Show when={hasMenu()}>
-          <button onClick={(e) => props.handleClick(e, props.file)} class="text-neutral-500 hover:text-neutral-950 focus:text-neutral-950 cursor-pointer">
-            <Ellipsis />
-          </button>
-        </Show>
-      </li>
-    </Selectable>
-  );
-}
-
-
-
-function InputFile(props) {
-  const navigate = useNavigate();
-  const handleFile = (event) => {
-    const file = event.target.files[0];
-
-    if (file) {
-      const extension = getExtensionFromName(file.name);
-
-      if (extension === 'pdf') {
-        (async () => {
-          try {
-            const imported = await importPdfAsMarkdown(file);
-            const mode = resolveFileMode(imported.name);
-            const { id, alreadyExist } = await props.addFileOptimistic({
-              name: imported.name,
-              content: imported.content,
-              sourceFormat: mode.sourceFormat,
-              renderMode: mode.renderMode
-            });
-
-            const destination = getFileRouteFromFile({
-              id,
-              name: imported.name,
-              renderMode: mode.renderMode
-            });
-
-            if (alreadyExist) {
-              toast('File already stored', {
-                action: {
-                  label: `Open ${imported.name}`,
-                  onClick: () => navigate(destination)
-                }
-              });
-              return;
-            }
-
-            navigate(destination);
-          } catch (error) {
-            toast.error(error instanceof Error ? error.message : `Error while converting ${file.name}`);
-          }
-        })();
-
-        return;
-      }
-
-      if (!isProbablyTextFile(file)) {
-        toast.error(`Unsupported file type for ${file.name}. Only text/code/PDF files are supported for now.`);
-        return;
-      }
-
-      const reader = new FileReader();
-      const mode = resolveFileMode(file.name);
-
-      reader.onload = async function (e) {
-        const content = e.target.result;
-
-        if (typeof content !== 'string') {
-          toast.error(`Error while reading file ${file.name}`);
-          return;
-        }
-
-        try {
-          const { id, alreadyExist } = await props.addFileOptimistic({
-            name: file.name,
-            content,
-            sourceFormat: mode.sourceFormat,
-            renderMode: mode.renderMode
-          });
-
-          const destination = getFileRouteFromFile({
-            id,
-            name: file.name,
-            renderMode: mode.renderMode
-          });
-
-          if (alreadyExist) {
-            toast('File already stored', {
-              action: {
-                label: `Open ${file.name}`,
-                onClick: () => navigate(destination)
-              }
-            });
-            return;
-          }
-
-          navigate(destination);
-        } catch {
-          toast.error(`Error while storing file ${file.name}`);
-        }
-      };
-
-      reader.onerror = function () {
-        toast.error(`Error while reading file ${file.name}`);
-      };
-
-      reader.readAsText(file, 'UTF-8');
+  const handleRemove = async () => {
+    try {
+      await props.onRemove(props.file.id);
+    } catch {
+      toast.error('Cloud deletion failed');
     }
   };
 
   return (
-    <label class="flex gap-2 items-center text-neutral-500 text-sm bg-neutral-100 rounded-lg px-2 py-1 cursor-pointer">
-      Add file
-      <Upload size={14} />
-      <input
-        class="appearance-none sr-only"
-        type="file"
-        accept={getInputAcceptValue()}
-        onInput={handleFile}
-      />
-
-    </label>
+    <li class="flex items-center gap-2">
+      <A
+        href={getFileRouteFromFile(props.file)}
+        class="grid grid-cols-[1fr_auto] gap-2 items-center py-2 w-full"
+      >
+        <h3 class="font-medium text-neutral-800">{getDisplayName(props.file.name)}</h3>
+        <span class="text-xs text-neutral-500">{props.file.updatedAt ? new Date(props.file.updatedAt).toLocaleDateString() : ''}</span>
+      </A>
+      <button
+        onClick={handleRemove}
+        class="text-neutral-500 hover:text-neutral-900"
+        aria-label="Delete file"
+      >
+        <Trash size={16} />
+      </button>
+    </li>
   );
 }
